@@ -310,6 +310,6 @@ plt.show()
 
 # ==========================================
 # 13. AFFICHER MESSAGE FINAL
-# ==========================================
+# see figure 1.png
 
 print("\nAnalyse terminée avec succès !")
