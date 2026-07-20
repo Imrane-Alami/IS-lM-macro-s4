@@ -1,5 +1,5 @@
 # ==========================================
-# PROJET IS-LM AVEC DONNEES FRED
+# IS-LM PROJECT WITH FRED DATA
 # ==========================================
 
 from pandas_datareader import data as web
@@ -9,20 +9,20 @@ import statsmodels.api as sm
 
 
 # ==========================================
-# 1. PERIODE D'ANALYSE
+# 1. ANALYSIS PERIOD
 # ==========================================
 
 start = "2000-01-01"
 end = "2025-12-31"
 
-print("Téléchargement des données FRED...")
+print("Downloading FRED data...")
 
 
 # ==========================================
-# 2. TELECHARGEMENT DES DONNEES
+# 2. DOWNLOAD DATA
 # ==========================================
 
-# PIB réel = Y
+# Real GDP = Y
 gdp = web.DataReader(
     "GDPC1",
     "fred",
@@ -30,15 +30,15 @@ gdp = web.DataReader(
     end
 )
 
-# Taux d'intérêt = i
-taux = web.DataReader(
+# Interest rate = i
+interest_rate = web.DataReader(
     "FEDFUNDS",
     "fred",
     start,
     end
 )
 
-# Masse monétaire M2 = M
+# Money supply M2 = M
 m2 = web.DataReader(
     "M2SL",
     "fred",
@@ -46,152 +46,152 @@ m2 = web.DataReader(
     end
 )
 
-# Niveau général des prix = P
-prix = web.DataReader(
+# General price level = P
+price_level = web.DataReader(
     "CPIAUCSL",
     "fred",
     start,
     end
 )
 
-# Consommation réelle = C
-consommation = web.DataReader(
+# Real consumption = C
+consumption = web.DataReader(
     "PCECC96",
     "fred",
     start,
     end
 )
 
-# Investissement privé réel = I
-investissement = web.DataReader(
+# Real private investment = I
+investment = web.DataReader(
     "GPDIC1",
     "fred",
     start,
     end
 )
 
-# Dépenses publiques réelles = G
-depenses_publiques = web.DataReader(
+# Real government spending = G
+government_spending = web.DataReader(
     "GCEC1",
     "fred",
     start,
     end
 )
 
-print("Téléchargement terminé !")
+print("Download completed!")
 
 
 # ==========================================
-# 3. CONVERTIR TOUT EN DONNEES TRIMESTRIELLES
+# 3. CONVERT ALL DATA TO QUARTERLY FREQUENCY
 # ==========================================
 
 gdp = gdp.resample("QE").mean()
 
-taux = taux.resample("QE").mean()
+interest_rate = interest_rate.resample("QE").mean()
 
 m2 = m2.resample("QE").mean()
 
-prix = prix.resample("QE").mean()
+price_level = price_level.resample("QE").mean()
 
-consommation = consommation.resample("QE").mean()
+consumption = consumption.resample("QE").mean()
 
-investissement = investissement.resample("QE").mean()
+investment = investment.resample("QE").mean()
 
-depenses_publiques = depenses_publiques.resample("QE").mean()
+government_spending = government_spending.resample("QE").mean()
 
 
 # ==========================================
-# 4. RENOMMER LES COLONNES
+# 4. RENAME COLUMNS
 # ==========================================
 
 gdp.columns = ["Y"]
 
-taux.columns = ["i"]
+interest_rate.columns = ["i"]
 
 m2.columns = ["M"]
 
-prix.columns = ["P"]
+price_level.columns = ["P"]
 
-consommation.columns = ["C"]
+consumption.columns = ["C"]
 
-investissement.columns = ["I"]
+investment.columns = ["I"]
 
-depenses_publiques.columns = ["G"]
+government_spending.columns = ["G"]
 
 
 # ==========================================
-# 5. FUSIONNER TOUTES LES DONNEES
+# 5. MERGE ALL DATA
 # ==========================================
 
 data = pd.concat(
     [
         gdp,
-        taux,
+        interest_rate,
         m2,
-        prix,
-        consommation,
-        investissement,
-        depenses_publiques
+        price_level,
+        consumption,
+        investment,
+        government_spending
     ],
     axis=1
 )
 
 
 # ==========================================
-# 6. SUPPRIMER LES LIGNES VIDES
+# 6. REMOVE MISSING VALUES
 # ==========================================
 
 data = data.dropna()
 
 
 # ==========================================
-# 7. CALCULER LA MASSE MONETAIRE REELLE
+# 7. CALCULATE REAL MONEY BALANCES
 # ==========================================
 
 data["M_P"] = data["M"] / data["P"]
 
 
 # ==========================================
-# 8. AFFICHER LES DONNEES
+# 8. DISPLAY THE DATA
 # ==========================================
 
-print("\nNombre de lignes disponibles :")
+print("\nNumber of available observations:")
 print(len(data))
 
-print("\nTABLEAU FINAL :")
+print("\nFINAL DATASET:")
 print(data.head())
 
-print("\nDERNIERES LIGNES :")
+print("\nLAST OBSERVATIONS:")
 print(data.tail())
 
 
 # ==========================================
-# 9. SAUVEGARDER LES DONNEES
+# 9. SAVE THE DATA
 # ==========================================
 
 data.to_csv(
-    "donnees_is_lm.csv"
+    "is_lm_data.csv"
 )
 
 print(
-    "\nFichier sauvegardé : donnees_is_lm.csv"
+    "\nFile saved: is_lm_data.csv"
 )
 
 
 # ==========================================
-# 10. ESTIMATION DE LA COURBE IS
+# 10. ESTIMATE THE IS CURVE
 # ==========================================
 
 print("\n================================")
-print("ESTIMATION DE LA COURBE IS")
+print("IS CURVE ESTIMATION")
 print("================================")
 
 
-# Variable expliquée
+# Dependent variable
 Y_is = data["Y"]
 
 
-# Variables explicatives
+# Explanatory variables
 X_is = data[
     [
         "i",
@@ -200,41 +200,41 @@ X_is = data[
 ]
 
 
-# Ajouter une constante
+# Add a constant
 X_is = sm.add_constant(
     X_is
 )
 
 
-# Régression OLS
-modele_is = sm.OLS(
+# OLS regression
+is_model = sm.OLS(
     Y_is,
     X_is
 ).fit()
 
 
-# Afficher les résultats
+# Display results
 print(
-    modele_is.summary()
+    is_model.summary()
 )
 
 
 # ==========================================
-# 11. ESTIMATION DE LA COURBE LM
+# 11. ESTIMATE THE LM CURVE
 # ==========================================
 
 print("\n================================")
-print("ESTIMATION DE LA COURBE LM")
+print("LM CURVE ESTIMATION")
 print("================================")
 
 
-# Variable expliquée :
-# taux d'intérêt
+# Dependent variable:
+# interest rate
 Y_lm = data["i"]
 
 
-# Variables explicatives :
-# PIB et masse monétaire réelle
+# Explanatory variables:
+# GDP and real money balances
 X_lm = data[
     [
         "Y",
@@ -243,27 +243,27 @@ X_lm = data[
 ]
 
 
-# Ajouter une constante
+# Add a constant
 X_lm = sm.add_constant(
     X_lm
 )
 
 
-# Régression OLS
-modele_lm = sm.OLS(
+# OLS regression
+lm_model = sm.OLS(
     Y_lm,
     X_lm
 ).fit()
 
 
-# Afficher les résultats
+# Display results
 print(
-    modele_lm.summary()
+    lm_model.summary()
 )
 
 
 # ==========================================
-# 12. GRAPHIQUE PIB ET TAUX D'INTERET
+# 12. REAL GDP AND INTEREST RATE GRAPH
 # ==========================================
 
 fig, ax1 = plt.subplots(
@@ -281,7 +281,7 @@ ax1.set_xlabel(
 )
 
 ax1.set_ylabel(
-    "PIB réel Y"
+    "Real GDP (Y)"
 )
 
 
@@ -295,12 +295,12 @@ ax2.plot(
 )
 
 ax2.set_ylabel(
-    "Taux d'intérêt i"
+    "Interest Rate (i)"
 )
 
 
 plt.title(
-    "PIB réel et taux d'intérêt - Données FRED"
+    "Real GDP and Interest Rate - FRED Data"
 )
 
 plt.grid()
@@ -309,11 +309,10 @@ plt.show()
 
 
 # ==========================================
-# 13. AFFICHER MESSAGE FINAL
-# see figure 1.png
-
-print("\nAnalyse terminée avec succès !")
+# 13. DISPLAY FINAL MESSAGE
 # ==========================================
+
+print("\nAnalysis completed successfully!")
 # 12. PLOT THE ESTIMATED IS AND LM CURVES
 # ==========================================
 
