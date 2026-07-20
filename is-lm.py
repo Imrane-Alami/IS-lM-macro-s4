@@ -313,3 +313,214 @@ plt.show()
 # see figure 1.png
 
 print("\nAnalyse terminée avec succès !")
+# ==========================================
+# 12. PLOT THE ESTIMATED IS AND LM CURVES
+# ==========================================
+
+import numpy as np
+
+print("\n================================")
+print("IS-LM EQUILIBRIUM AND GRAPH")
+print("================================")
+
+
+# ==========================================
+# GET IS COEFFICIENTS
+# ==========================================
+
+a_is = modele_is.params["const"]
+b_is = modele_is.params["i"]
+c_is = modele_is.params["G"]
+
+
+# ==========================================
+# GET LM COEFFICIENTS
+# ==========================================
+
+a_lm = modele_lm.params["const"]
+b_lm = modele_lm.params["Y"]
+c_lm = modele_lm.params["M_P"]
+
+
+# ==========================================
+# USE AVERAGE VALUES OF G AND M/P
+# ==========================================
+
+G_mean = data["G"].mean()
+MP_mean = data["M_P"].mean()
+
+
+# ==========================================
+# CREATE A RANGE OF GDP VALUES
+# ==========================================
+
+Y_values = np.linspace(
+    data["Y"].min(),
+    data["Y"].max(),
+    500
+)
+
+
+# ==========================================
+# IS CURVE
+#
+# Estimated equation:
+#
+# Y = a + b*i + c*G
+#
+# Solving for i:
+#
+# i = (Y - a - c*G) / b
+# ==========================================
+
+IS_values = (
+    Y_values
+    - a_is
+    - c_is * G_mean
+) / b_is
+
+
+# ==========================================
+# LM CURVE
+#
+# Estimated equation:
+#
+# i = a + b*Y + c*(M/P)
+# ==========================================
+
+LM_values = (
+    a_lm
+    + b_lm * Y_values
+    + c_lm * MP_mean
+)
+
+
+# ==========================================
+# CALCULATE THE IS-LM EQUILIBRIUM
+# ==========================================
+
+IS_slope = 1 / b_is
+
+IS_intercept = (
+    -a_is
+    - c_is * G_mean
+) / b_is
+
+
+LM_slope = b_lm
+
+LM_intercept = (
+    a_lm
+    + c_lm * MP_mean
+)
+
+
+# Check that the curves are not parallel
+if abs(IS_slope - LM_slope) > 1e-10:
+
+    Y_equilibrium = (
+        LM_intercept
+        - IS_intercept
+    ) / (
+        IS_slope
+        - LM_slope
+    )
+
+    i_equilibrium = (
+        LM_slope * Y_equilibrium
+        + LM_intercept
+    )
+
+    print(
+        f"Equilibrium GDP Y* = {Y_equilibrium:.2f}"
+    )
+
+    print(
+        f"Equilibrium interest rate i* = {i_equilibrium:.2f}"
+    )
+
+else:
+
+    Y_equilibrium = None
+    i_equilibrium = None
+
+    print(
+        "Unable to calculate equilibrium: "
+        "the curves are nearly parallel."
+    )
+
+
+# ==========================================
+# CREATE THE GRAPH
+# ==========================================
+
+plt.figure(
+    figsize=(10, 6)
+)
+
+
+# Plot IS curve
+plt.plot(
+    Y_values,
+    IS_values,
+    label="Estimated IS Curve"
+)
+
+
+# Plot LM curve
+plt.plot(
+    Y_values,
+    LM_values,
+    label="Estimated LM Curve"
+)
+
+
+# ==========================================
+# ADD THE EQUILIBRIUM POINT
+# ==========================================
+
+if Y_equilibrium is not None:
+
+    plt.scatter(
+        Y_equilibrium,
+        i_equilibrium,
+        s=100,
+        label=(
+            f"Equilibrium E "
+            f"({Y_equilibrium:.2f}, "
+            f"{i_equilibrium:.2f})"
+        )
+    )
+
+    plt.axvline(
+        Y_equilibrium,
+        linestyle="--"
+    )
+
+    plt.axhline(
+        i_equilibrium,
+        linestyle="--"
+    )
+
+
+# ==========================================
+# CUSTOMIZE THE GRAPH
+# ==========================================
+
+plt.xlabel(
+    "Real GDP (Y)"
+)
+
+plt.ylabel(
+    "Interest Rate (i)"
+)
+
+plt.title(
+    "Estimated IS-LM Model Using FRED Data"
+)
+
+plt.legend()
+
+plt.grid()
+
+plt.show()
